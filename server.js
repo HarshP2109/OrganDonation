@@ -1,6 +1,15 @@
 const express = require('express');
 const app = express();
 const bodyParser = require("body-parser");
+const session = require('express-session');
+
+
+
+app.use(session({
+    secret: 'your-secret-key',
+    resave: false,
+    saveUninitialized: true
+  }));
 app.use(bodyParser.json());
 const { render } = require('ejs');
 app.use(bodyParser.urlencoded({extended: true}));
@@ -8,7 +17,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 //------Changes---------
 app.set('view engine', 'ejs');
 //------Changes---------
-var naam = "";
+// var naam = "";
 
 
 const ServerKey = 3000;
@@ -32,10 +41,11 @@ app.get('/contact', (req,res)=>{
 });
 //------Changes---------
 app.get('/profile', (req,res)=>{
-    if(naam==="")
-    res.redirect("/login")
+    let kaam = req.session.Details;
+    if(kaam)
+    res.sendFile(__dirname + "/profile.html");
     else
-    res.render("pages/profile",naam)
+    res.redirect("/login")
 });
 //------Changes---------
 app.get('/login', (req,res)=>{
@@ -51,31 +61,13 @@ app.get('/treatment', (req,res)=>{
 });
 
 
-app.post('/', (req,res)=>{
-    let name = req.body.name;
-    let doctor = req.body.drname;
-    let specialize = req.body.special;
-    let number = req.body.num;
-    let date = req.body.tarikh;
-    var datii ={
-        "Name":name,
-        "Dr":doctor,
-        "Specialization":specialize,
-        "Phone_Number":number,
-        "Date":date
-    };
-
-    console.log(datii);
-
-    inserTData(datii);
-
-    res.redirect('/');
-});
 
 app.post('/login', (req,res)=>{
     let name = req.body.uname;
     let email = req.body.email;
     let pass = req.body.pass;
+    let Person = req.body.userdetails;
+    req.session.Details = Person;
 
     if(name==undefined){
         var datii = {
@@ -87,7 +79,9 @@ app.post('/login', (req,res)=>{
             if(pasuu[0].Pass === pass){
  
                 // naam = pasuu[0].Name
-                res.render("pages/profile",{ Name: pasuu[0].Name})
+                req.session.Details = pasuu[0].Email;
+                // res.render("pages/profile",{ Name: pasuu[0].Name})
+                res.redirect('/profile');
                 //------Changes---------
             }
             else
@@ -102,7 +96,7 @@ app.post('/login', (req,res)=>{
     };
     console.log(datii);
     CreateID(datii);
-    res.redirect('/login');
+    res.redirect('/profile');
     }
 
     // inserTData(datii);
@@ -111,6 +105,22 @@ app.post('/login', (req,res)=>{
 });
 
 
+app.post('/contactform',(req,res) =>{
+    let name = req.body.naam;
+    let email = req.body.mail;
+    let number = req.body.num;
+    let message = req.body.mess;
+
+    let ContactUS = {
+        'Name': name,
+        'Email':email,
+        'Number':number,
+        'Message':message
+    }
+    console.log(ContactUS);
+
+    res.redirect('/');
+});
 
 
 
@@ -123,8 +133,8 @@ app.post('/login', (req,res)=>{
 
 // MongoDB Connection
 
-const DBname = 'Doctor_Appointment';
-var CollectName;
+const DBname = 'Organ_Donation';
+var CollectName = "User";
 
 const {MongoClient} = require("mongodb");
 // const { log } = require('console');
@@ -155,11 +165,11 @@ async function inserTData(data)
 async function CreateID(data) 
 {
     try{
-        CollectName = data.Dr;
-        console.log(data.Dr);
+        // CollectName = data.Dr;
+        // console.log(data.Dr);
       let result = await client.connect();  //To Connect Server
       let db = result.db(DBname);   //To tell database name
-      let collecter = db.collection("Doc_Id");     //To tell Collection Name
+      let collecter = db.collection("User_Id");     //To tell Collection Name
 
     //   const options = { ordered: true };  //It is used for avoiding duplicate items
 
@@ -177,7 +187,7 @@ async function check_id(emuu)
     try{
         let result = await client.connect();
         let db = result.db(DBname); 
-        let collection = db.collection("Doc_Id");
+        let collection = db.collection("User_Id");
   
         let response = await collection.find({"Email":emuu}).toArray();
         if(response.length)
