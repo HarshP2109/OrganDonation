@@ -13,7 +13,7 @@ app.use(session({
 app.use(bodyParser.json());
 const { render } = require('ejs');
 app.use(bodyParser.urlencoded({extended: true}));
-
+app.use(express.static(__dirname + '/public')); 
 //------Changes---------
 app.set('view engine', 'ejs');
 //------Changes---------
@@ -22,42 +22,42 @@ app.set('view engine', 'ejs');
 
 const ServerKey = 3000;
 
-app.use(express.static(__dirname + '/public'));
+app.use(express.static('/public'));
 
 app.get('/', (req,res)=>{
-    res.sendFile(__dirname + "/index.html")
+    res.render("pages/index")
 });
 
 app.get('/about', (req,res)=>{
-    res.sendFile(__dirname + "/about.html")
+    res.render("pages/about")
 });
 
 app.get('/doctor', (req,res)=>{
-    res.sendFile(__dirname + "/doctor.html")
+    res.render("pages/doctorprofile")
 });
 
 app.get('/contact', (req,res)=>{
-    res.sendFile(__dirname + "/contact.html")
+    res.render("pages/contact")
 });
 //------Changes---------
 app.get('/profile', (req,res)=>{
-    let kaam = req.session.Details;
+    let kaam = req.session.userdetails;
     if(kaam)
-    res.sendFile(__dirname + "/profile.html");
+    res.render("pages/profile",{User:kaam});
     else
     res.redirect("/login")
 });
 //------Changes---------
 app.get('/login', (req,res)=>{
-    res.sendFile(__dirname + "/login.html")
+    res.render("pages/login")
 });
 
 app.get('/testimonial', (req,res)=>{
-    res.sendFile(__dirname + "/testimonial.html")
+    res.render("pages/testimonial")
 });
 
 app.get('/treatment', (req,res)=>{
-    res.sendFile(__dirname + "/treatment.html")
+    res.render("pages/treatment")
 });
 
 
@@ -67,7 +67,7 @@ app.post('/login', (req,res)=>{
     let email = req.body.email;
     let pass = req.body.pass;
     let Person = req.body.userdetails;
-    req.session.Details = Person;
+    req.session.userdetails = Person;
 
     if(name==undefined){
         var datii = {
@@ -76,23 +76,27 @@ app.post('/login', (req,res)=>{
         };
         check_id(email).then(pasuu =>{
                 //------Changes---------
-            if(pasuu[0].Pass === pass){
- 
-                // naam = pasuu[0].Name
-                req.session.Details = pasuu[0].Email;
-                // res.render("pages/profile",{ Name: pasuu[0].Name})
-                res.redirect('/profile');
-                //------Changes---------
+            console.log(pasuu);
+
+            if (pasuu) {
+                if (pasuu[0].Pass === pass) {
+                    req.session.userdetails = pasuu[0].IDTYPE;
+                    console.log("Is it working" + pasuu[0].Pass);
+                    res.redirect('/profile');
+                } else {
+                    res.redirect('/login');
+                }
+            } else {
+                res.redirect('/');
             }
-            else
-                res.redirect("/");
         });        
     }
     else{
     var datii = {
         "Name":name,
         "Email":email,
-        "Pass":pass
+        "Pass":pass,
+        "IDTYPE":Person
     };
     console.log(datii);
     CreateID(datii);
